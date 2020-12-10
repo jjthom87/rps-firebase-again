@@ -1,0 +1,18 @@
+.firebase-content {
+  text-align: center;
+}
+
+.buttons-div {
+  display: flex;
+}
+
+.join-game-buttons {
+  margin: 100px;
+  font-size: 24px;
+  width: 30%;
+}
+
+.join-game-buttons:hover {
+  cursor: pointer;
+  box-shadow: 2px 2px 5px rgba(1, 1, 0, .7);
+}
