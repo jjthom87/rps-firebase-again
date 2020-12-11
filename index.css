@@ -1,5 +1,10 @@
-.firebase-content {
+#page-title {
   text-align: center;
+}
+
+.firebase-content {
+  display: flex;
+  justify-content: center;
 }
 
 .buttons-div {
@@ -9,10 +14,17 @@
 .join-game-buttons {
   margin: 100px;
   font-size: 24px;
-  width: 30%;
 }
 
 .join-game-buttons:hover {
   cursor: pointer;
   box-shadow: 2px 2px 5px rgba(1, 1, 0, .7);
+}
+
+.player-divs {
+  text-align: center;
+}
+
+.choices {
+  margin-top: -30px;
 }
