@@ -14,7 +14,6 @@ var firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 
 function setGameData(){
-  console.log("in here for some reason")
   // firebase.database().ref("playerOneJoined").on("value", function(snapshot){
   //
   //   playerOneJoined = snapshot.val();
@@ -33,6 +32,8 @@ function setGameData(){
       firebase.database().ref("playerTwoLosses").set(0);
 
       firebase.database().ref("gameTies").set(0);
+      firebase.database().ref("playerOneGameTies").set(0);
+      firebase.database().ref("playerTwoGameTies").set(0);
 
       firebase.database().ref("whoLastClicked").set(null);
 
@@ -65,9 +66,9 @@ firebase.database().ref("playerTwoJoined").on("value", function(snapshot){
 
 });
 
-firebase.database().ref("gameTies").on("value", function(snapshot){
-  $("#ties").text(snapshot.val())
-});
+// firebase.database().ref("gameTies").on("value", function(snapshot){
+//   $("#ties").text(snapshot.val())
+// });
 
 $("#player-one-join-game-button").click(function(){
   firebase.database().ref("playerOneJoined").set(true)
@@ -75,6 +76,7 @@ $("#player-one-join-game-button").click(function(){
   appendWaitingContent();
 
   bothPlayerStatuses();
+  appendTiesOnPlayersJoining("player-one")
 });
 
 $("#player-two-join-game-button").click(function(){
@@ -86,6 +88,7 @@ $("#player-two-join-game-button").click(function(){
   $(this).css("box-shadow", "none");
 
   bothPlayerStatuses();
+  appendTiesOnPlayersJoining("player-two")
 });
 
 bothPlayerStatuses();
@@ -102,8 +105,8 @@ $(document).on("click", "#paper-choice-button-player-one", function(){
   // firebase.database().ref("whoLastClicked").set("player-one");
   // $(".player-one-choice-buttons").attr("disabled", true)
   // bothPlayerChoices();
-  console.log("player one clicked a choice")
-
+  // console.log("player one clicked a choice")
+  playerOneClickedTheirChoice();
   checkIfBothPlayersHaveChosenPlayerOne()
 })
 
@@ -115,9 +118,9 @@ $(document).on("click", "#paper-choice-button-player-two", function(){
   // firebase.database().ref("playerTwoChoice").set(playerTwoChoice)
   // $(".player-two-choice-buttons").attr("disabled", true)
   // bothPlayerChoices()
-  console.log("player two clicked a choice")
+  // console.log("player two clicked a choice")
   // firebase.database().ref("whoLastClicked").set("player-two");
-
+  playerTwoClickedTheirChoice();
   checkIfBothPlayersHaveChosenPlayerTwo()
 })
 
@@ -187,6 +190,50 @@ function enableJoinButton(playerButton){
   $(".choices").empty();
 }
 
+function playerOneClickedTheirChoice(){
+  var playerOneChoice = null;
+  var playerTwoChoice = null;
+
+  firebase.database().ref("choicesForPlayerOne").on("value", function(snapshot){
+    var didPlayerOneChoose = snapshot.val().playerOneChoice != "TBD"
+    var didPlayerTwoChoose = snapshot.val().playerTwoChoice != "TBD"
+    var playerOneChoice = snapshot.val().playerOneChoice;
+    var playerTwoChoice = snapshot.val().playerTwoChoice;
+
+    if(didPlayerOneChoose && didPlayerTwoChoose){
+      playerOneGameLogic(playerOneChoice, playerOneChoice)
+    } else if (didPlayerOneChoose && !didPlayerTwoChoose){
+
+    } else if (!didPlayerOneChoose && didPlayerTwoChoose){
+
+    } else {
+
+    }
+  });
+}
+
+function playerTwoClickedTheirChoice(){
+  var playerOneChoice = null;
+  var playerTwoChoice = null;
+
+  firebase.database().ref("choicesForPlayerTwo").on("value", function(snapshot){
+    var didPlayerOneChoose = snapshot.val().playerOneChoice != "TBD"
+    var didPlayerTwoChoose = snapshot.val().playerTwoChoice != "TBD"
+    var playerOneChoice = snapshot.val().playerOneChoice;
+    var playerTwoChoice = snapshot.val().playerTwoChoice;
+
+    if(didPlayerOneChoose && didPlayerTwoChoose){
+      playerTwoGameLogic(playerOneChoice, playerOneChoice)
+    } else if (didPlayerOneChoose && !didPlayerTwoChoose){
+
+    } else if (!didPlayerOneChoose && didPlayerTwoChoose){
+
+    } else {
+
+    }
+  });
+}
+
 function bothPlayerChoices(){
   var playerOneChoice = null;
   var playerTwoChoice = null;
@@ -221,9 +268,11 @@ function bothPlayerChoices(){
   }
 }
 
-function gameLogic(playerOneGuess, playerTwoGuess){
+function playerOneGameLogic(playerOneGuess, playerTwoGuess){
   if(playerOneGuess == "paper" && playerTwoGuess == "paper"){
-    setGameTied();
+    setGameTied().then(function(val){
+      firebase.database().ref("gameTies").set(val + 1)
+    });
   } else if (playerOneGuess == "rock" && playerTwoGuess == "rock"){
     setGameTied();
   } else if (playerOneGuess == "scissor" && playerTwoGuess == "scissor"){
@@ -246,20 +295,93 @@ function gameLogic(playerOneGuess, playerTwoGuess){
   }
 }
 
-function setGameTied(){
-  var num;
-  firebase.database().ref("gameTies").on("value", function(snapshot){
-    num = snapshot.val();
-  });
-  num++
-  firebase.database().ref("gameTies").set(num)
+function playerTwoGameLogic(playerOneGuess, playerTwoGuess){
+  if(playerOneGuess == "paper" && playerTwoGuess == "paper"){
+    setGameTied().then(function(val){
+      firebase.database().ref("gameTies").set(val + 1)
+    });
+  } else if (playerOneGuess == "rock" && playerTwoGuess == "rock"){
+    setGameTied();
+  } else if (playerOneGuess == "scissor" && playerTwoGuess == "scissor"){
+    setGameTied();
+  } else if (playerOneGuess == "paper" && playerTwoGuess == "rock"){
+    player.wins++;
+    game.roundWinner = "Player";
+  } else if (playerOneGuess == "rock" && playerTwoGuess == "scissor"){
+    player.wins++;
+    game.roundWinner = "Player";
+  } else if (playerOneGuess == "scissor" && playerTwoGuess == "paper"){
+    player.wins++;
+    game.roundWinner = "Player";
+  } else if (playerOneGuess == "rock" && playerTwoGuess == "paper"){
+    game.roundWinner = "Computer";
+  } else if (playerOneGuess == "paper" && playerTwoGuess == "scissor"){
+    game.roundWinner = "Computer";
+  } else if (playerOneGuess == "scissor" && playerTwoGuess == "rock"){
+    game.roundWinner = "Computer";
+  }
+}
 
-  resetGameChoices();
-  enableChoiceButtons();
+var j = 0;
+function setGameTiedFromPlayerOne(){
+  console.log("setting game tied from player one")
+  var num = null;
+  firebase.database().ref("playerOneGameTies").on("value", function(snapshot){
+    // if(j == 1){
+      console.log("j here " + j)
+      console.log(snapshot.val())
+      num = snapshot.val();
+    // }
+  });
+  firebase.database().ref("playerOneGameTies").set(num + 1)
+  // firebase.database().ref("playerTwoGameTies").set(num + 1)
+  j++;
+  // $("#player-one-ties").text(num)
+  // $("#player-two-ties").text(num)
+}
+
+var i = 0
+function setGameTiedFromPlayerTwo(){
+  console.log("setting game tied from player two")
+  var num = null;
+  firebase.database().ref("playerTwoGameTies").on("value", function(snapshot){
+    // if(i == 1){
+      console.log("i here " + i)
+      console.log(snapshot.val())
+      num = snapshot.val();
+    // }
+  });
+  // firebase.database().ref("playerOneGameTies").set(num + 1)
+  firebase.database().ref("playerTwoGameTies").set(num + 1)
+  i++
+  // $("#player-one-ties").text(num)
+  // $("#player-two-ties").text(num)
+}
+
+function setGameTied(){
+  console.log("setting game tied from game tied")
+  return firebase.database().ref("gameTies").once("value").then(function(snapshot){
+    console.log(snapshot.val())
+    return snapshot.val();
+  })
+
+  // console.log(num)
+  // firebase.database().ref("gameTies").set(num + 1)
+
+
+  // , function(snapshot){
+    // if(i == 1){
+      // console.log("i here " + i)
+
+    // }
+  // });
+  // firebase.database().ref("playerOneGameTies").set(num + 1)
+  // i++
+  // $("#player-one-ties").text(num)
+  // $("#player-two-ties").text(num)
 }
 
 function resetGameChoices(){
-  console.log("resetting Game Choices")
   firebase.database().ref("choicesForPlayerOne/playerOneChoice").set("TBD");
   firebase.database().ref("choicesForPlayerOne/playerTwoChoice").set("TBD");
   firebase.database().ref("choicesForPlayerTwo/playerOneChoice").set("TBD");
@@ -277,27 +399,20 @@ function enableChoiceButtons(){
 }
 
 function checkIfBothPlayersHaveChosenPlayerOne(){
-  console.log("ran this one")
-  var i = 0;
   var playerOneChoice;
   var playerTwoChoice;
 
   firebase.database().ref("choicesForPlayerOne").on("value", function(snapshot){
-    console.log("got there")
-    console.log(snapshot.val())
     var playerOneChoice = snapshot.val().playerOneChoice != "TBD"
     var playerTwoChoice = snapshot.val().playerTwoChoice != "TBD"
     if(playerOneChoice && playerTwoChoice){
       enableChoiceButtons();
       resetGameChoices();
     } else if (playerOneChoice && !playerTwoChoice){
-      console.log("line 294")
       $(".player-one-choice-buttons").attr("disabled", true)
     } else if (!playerOneChoice && playerTwoChoice){
-      console.log("line 297")
       $(".player-two-choice-buttons").attr("disabled", true)
     } else if (!playerOneChoice && !playerTwoChoice) {
-      console.log("line 300")
       resetGameChoices();
       enableChoiceButtons();
     }
@@ -307,27 +422,25 @@ function checkIfBothPlayersHaveChosenPlayerOne(){
 function checkIfBothPlayersHaveChosenPlayerTwo(){
   var playerOneChoice;
   var playerTwoChoice;
+
   firebase.database().ref("choicesForPlayerTwo").on("value", function(snapshot){
-    console.log("got here")
-    console.log(snapshot.val())
     var playerOneChoice = snapshot.val().playerOneChoice != "TBD"
     var playerTwoChoice = snapshot.val().playerTwoChoice != "TBD"
     if(playerOneChoice && playerTwoChoice){
       enableChoiceButtons();
       resetGameChoices();
     } else if (playerOneChoice && !playerTwoChoice){
-      console.log("line 318")
       $(".player-one-choice-buttons").attr("disabled", true)
     } else if (!playerOneChoice && playerTwoChoice){
-      console.log("line 321")
       $(".player-two-choice-buttons").attr("disabled", true)
     } else if (!playerOneChoice && !playerTwoChoice) {
-      console.log("line 324")
       enableChoiceButtons();
+      resetGameChoices();
     }
   });
 }
 
-function checkWithObject(){
-
+function appendTiesOnPlayersJoining(player){
+  var tiesHtml = "<h3>Ties: <span id='"+player+"-ties'>0</span></h3>"
+  $(".game-stats").html(tiesHtml)
 }
