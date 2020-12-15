@@ -74,7 +74,7 @@ $(".join-game-buttons").click(function(){
 
   if(player == "player-one"){
     appendWaitingForPlayerTwoContent();
-    setPlayerOneJoinedButton()
+    setPlayerOneJoinedButton();
   } else {
     setPlayerOneHtmlForPlayerTwoScreen();
   }
