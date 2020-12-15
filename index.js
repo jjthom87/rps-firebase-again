@@ -14,15 +14,7 @@ firebase.initializeApp(firebaseConfig);
 firebaseUpdatesForGame();
 
 function setGameData(){
-  firebase.database().ref("playersJoined").set({playerOneJoined: false, playerTwoJoined: false});
-
-  firebase.database().ref("playerOneWins").set(0);
-  firebase.database().ref("playerTwoWins").set(0);
-  firebase.database().ref("playerOneLosses").set(0);
-  firebase.database().ref("playerTwoLosses").set(0);
-  firebase.database().ref("gameTies").set(0);
-
-  firebase.database().ref("playersChoices").set({playerOneChoice: "TBD", playerTwoChoice: "TBD"});
+  firebase.database().ref("gameStats").set({ties: 0, playerOne: {wins: 0, losses: 0, choice: "TBD", joined: false}, playerTwo: {wins: 0, losses: 0, choice: "TBD", joined: false}})
 }
 
 function updateHtmlOnPlayerJoined(player, playerJoined){
@@ -34,9 +26,9 @@ function updateHtmlOnPlayerJoined(player, playerJoined){
 }
 
 function bothPlayersJoined(){
-  firebase.database().ref("playersJoined").on("value", function(snapshot){
-    var playerOneJoined = snapshot.val().playerOneJoined;
-    var playerTwoJoined = snapshot.val().playerTwoJoined;
+  firebase.database().ref("gameStats").on("value", function(snapshot){
+    var playerOneJoined = snapshot.val().playerOne.joined;
+    var playerTwoJoined = snapshot.val().playerTwo.joined;
 
     if(playerOneJoined && playerTwoJoined){
       updateHtmlWhenBothPlayersHaveJoined();
@@ -50,11 +42,11 @@ function bothPlayersJoined(){
 }
 
 function updateHtmlOnPlayersJoining(){
-  firebase.database().ref("playersJoined").on("value", function(snapshot){
-    var playerOneJoined = snapshot.val().playerOneJoined;
+  firebase.database().ref("gameStats").on("value", function(snapshot){
+    var playerOneJoined = snapshot.val().playerOne.joined;
     updateHtmlOnPlayerJoined("player-one", playerOneJoined)
 
-    var playerTwoJoined = snapshot.val().playerTwoJoined;
+    var playerTwoJoined = snapshot.val().playerTwo.joined;
     updateHtmlOnPlayerJoined("player-two", playerTwoJoined)
   });
 }
@@ -102,12 +94,12 @@ function setPlayerOneJoinedButton(){
 }
 
 function setPlayerJoinedInFirebase(player){
-  firebase.database().ref("playersJoined/"+player+"Joined").set(true)
+  firebase.database().ref("gameStats/"+player+"/joined").set(true)
 }
 
 function setPlayerOneHtmlForPlayerTwoScreen(){
-  firebase.database().ref("playersJoined").on("value", function(snapshot){
-    if(snapshot.val().playerOneJoined){
+  firebase.database().ref("gameStats").on("value", function(snapshot){
+    if(snapshot.val().playerOne.joined){
       var span = $("<div>");
       span.css("margin-top", "110px");
       span.text("Player One has Joined");
@@ -144,7 +136,7 @@ var populateChoicesForPlayer = (choicesDiv, player, firebaseRef) => {
 }
 
 function setChoiceForPlayer(player, choice){
-  firebase.database().ref("playersChoices/"+player+"Choice").set(choice)
+  firebase.database().ref("gameStats/"+player+"/choice").set(choice)
 }
 
 function defaultDisabledButton(playerButton){
@@ -163,11 +155,11 @@ function playerClickedTheirChoice(){
   var playerOneChoice = null;
   var playerTwoChoice = null;
 
-  firebase.database().ref("playersChoices").on("value", function(snapshot){
-    var didPlayerOneChoose = snapshot.val().playerOneChoice != "TBD"
-    var didPlayerTwoChoose = snapshot.val().playerTwoChoice != "TBD"
-    var playerOneChoice = snapshot.val().playerOneChoice;
-    var playerTwoChoice = snapshot.val().playerTwoChoice;
+  firebase.database().ref("gameStats").on("value", function(snapshot){
+    var didPlayerOneChoose = snapshot.val().playerOne.choice != "TBD"
+    var didPlayerTwoChoose = snapshot.val().playerTwo.choice != "TBD"
+    var playerOneChoice = snapshot.val().playerOne.choice;
+    var playerTwoChoice = snapshot.val().playerTwo.choice;
 
     if(didPlayerOneChoose && didPlayerTwoChoose){
       gameLogic(playerOneChoice, playerTwoChoice)
@@ -176,35 +168,31 @@ function playerClickedTheirChoice(){
 }
 
 function gameLogic(playerOneGuess, playerTwoGuess){
-  if(playerOneGuess == "paper" && playerTwoGuess == "paper"){
-    updateGameTies();
-  } else if (playerOneGuess == "rock" && playerTwoGuess == "rock"){
-    updateGameTies();
-  } else if (playerOneGuess == "scissor" && playerTwoGuess == "scissor"){
+  if(playerOneGuess == playerTwoGuess){
     updateGameTies();
   } else if (playerOneGuess == "paper" && playerTwoGuess == "rock"){
-    updatePlayerOneWins();
-    updatePlayerTwoLosses();
+    updatePlayerStat("playerOne", "wins");
+    updatePlayerStat("playerTwo", "losses");
   } else if (playerOneGuess == "rock" && playerTwoGuess == "scissor"){
-    updatePlayerOneWins();
-    updatePlayerTwoLosses();
+    updatePlayerStat("playerOne", "wins");
+    updatePlayerStat("playerTwo", "losses");
   } else if (playerOneGuess == "scissor" && playerTwoGuess == "paper"){
-    updatePlayerOneWins();
-    updatePlayerTwoLosses();
+    updatePlayerStat("playerOne", "wins");
+    updatePlayerStat("playerTwo", "losses");
   } else if (playerOneGuess == "rock" && playerTwoGuess == "paper"){
-    updatePlayerOneLosses();
-    updatePlayerTwoWins();
+    updatePlayerStat("playerOne", "losses");
+    updatePlayerStat("playerTwo", "wins");
   } else if (playerOneGuess == "paper" && playerTwoGuess == "scissor"){
-    updatePlayerOneLosses();
-    updatePlayerTwoWins();
+    updatePlayerStat("playerOne", "losses");
+    updatePlayerStat("playerTwo", "wins");
   } else if (playerOneGuess == "scissor" && playerTwoGuess == "rock"){
-    updatePlayerOneLosses();
-    updatePlayerTwoWins();
+    updatePlayerStat("playerOne", "losses");
+    updatePlayerStat("playerTwo", "wins");
   }
 }
 
 function getGameTies(){
-  return firebase.database().ref("gameTies").once("value").then(function(snapshot){
+  return firebase.database().ref("gameStats/ties").once("value").then(function(snapshot){
     return snapshot.val();
   })
 }
@@ -212,12 +200,12 @@ function getGameTies(){
 function updateGameTiesFirebase(){
   getGameTies().then(function(val){
     var updatedGameTies = val + 1
-    firebase.database().ref("gameTies").set(updatedGameTies);
+    firebase.database().ref("gameStats/ties").set(updatedGameTies);
   });
 }
 
 function updateGameTiesHtml(){
-  firebase.database().ref("gameTies").on("value", function(snapshot){
+  firebase.database().ref("gameStats/ties").on("value", function(snapshot){
     $("#player-one-ties").text(snapshot.val());
     $("#player-two-ties").text(snapshot.val());
   });
@@ -228,100 +216,29 @@ function updateGameTies(){
   updateGameTiesHtml();
 }
 
-function getPlayerOneLosses(){
-  return firebase.database().ref("playerOneLosses").once("value").then(function(snapshot){
+function getPlayerStat(player, stat){
+  return firebase.database().ref("gameStats/"+player+"/"+stat+"").once("value").then(function(snapshot){
     return snapshot.val();
   })
 }
 
-function updatePlayerOneLossesFirebase(){
-  getPlayerOneLosses().then(function(val){
-    var updatedPlayerOneLosses = val + 1
-    firebase.database().ref("playerOneLosses").set(updatedPlayerOneLosses);
+function updatePlayerStatFirebase(player, stat){
+  getPlayerStat(player, stat).then(function(val){
+    var updatedPlayerStats = val + 1
+    firebase.database().ref("gameStats/"+player+"/"+stat+"").set(updatedPlayerStats);
   });
 }
 
-function updatePlayerOneLossesHtml(){
-  firebase.database().ref("playerOneLosses").on("value", function(snapshot){
-    $("#player-one-losses").text(snapshot.val());
+function updatePlayerStatHtml(player, stat){
+  var htmlRef = player == "playerOne" ? "player-one" : "player-two";
+  firebase.database().ref("gameStats/"+player+"/"+stat+"").on("value", function(snapshot){
+    $("#"+htmlRef+"-"+stat+"").text(snapshot.val());
   });
 }
 
-function updatePlayerOneLosses(){
-  updatePlayerOneLossesFirebase();
-  updatePlayerOneLossesHtml();
-}
-
-function getPlayerOneWins(){
-  return firebase.database().ref("playerOneWins").once("value").then(function(snapshot){
-    return snapshot.val();
-  })
-}
-
-function updatePlayerOneWinsFirebase(){
-  getPlayerOneWins().then(function(val){
-    var updatedPlayerOneWins = val + 1
-    firebase.database().ref("playerOneWins").set(updatedPlayerOneWins);
-  });
-}
-
-function updatePlayerOneWinsHtml(){
-  firebase.database().ref("playerOneWins").on("value", function(snapshot){
-    $("#player-one-wins").text(snapshot.val());
-  });
-}
-
-function updatePlayerOneWins(){
-  updatePlayerOneWinsFirebase();
-  updatePlayerOneWinsHtml();
-}
-
-function getPlayerTwoLosses(){
-  return firebase.database().ref("playerTwoLosses").once("value").then(function(snapshot){
-    return snapshot.val();
-  })
-}
-
-function updatePlayerTwoLossesFirebase(){
-  getPlayerTwoLosses().then(function(val){
-    var updatedPlayerTwoLosses = val + 1
-    firebase.database().ref("playerTwoLosses").set(updatedPlayerTwoLosses);
-  });
-}
-
-function updatePlayerTwoLossesHtml(){
-  firebase.database().ref("playerTwoLosses").on("value", function(snapshot){
-    $("#player-two-losses").text(snapshot.val());
-  });
-}
-
-function updatePlayerTwoLosses(){
-  updatePlayerTwoLossesFirebase();
-  updatePlayerTwoLossesHtml();
-}
-
-function getPlayerTwoWins(){
-  return firebase.database().ref("playerTwoWins").once("value").then(function(snapshot){
-    return snapshot.val();
-  })
-}
-
-function updatePlayerTwoWinsFirebase(){
-  getPlayerTwoWins().then(function(val){
-    var updatedPlayerTwoWins = val + 1
-    firebase.database().ref("playerTwoWins").set(updatedPlayerTwoWins);
-  });
-}
-
-function updatePlayerTwoWinsHtml(){
-  firebase.database().ref("playerTwoWins").on("value", function(snapshot){
-    $("#player-two-wins").text(snapshot.val());
-  });
-}
-
-function updatePlayerTwoWins(){
-  updatePlayerTwoWinsFirebase();
-  updatePlayerTwoWinsHtml();
+function updatePlayerStat(player, stat){
+  updatePlayerStatFirebase(player, stat);
+  updatePlayerStatHtml(player, stat);
 }
 
 function appendStatsOnPlayersJoining(player){
@@ -332,16 +249,16 @@ function appendStatsOnPlayersJoining(player){
 }
 
 function updateHtmlForBothPlayersStats(){
-  updatePlayerTwoWinsHtml();
-  updatePlayerTwoLossesHtml();
-  updatePlayerOneWinsHtml();
-  updatePlayerOneLossesHtml();
-  updateGameTiesHtml()
+  updatePlayerStatHtml("playerOne", "wins");
+  updatePlayerStatHtml("playerOne", "losses");
+  updatePlayerStatHtml("playerTwo", "wins");
+  updatePlayerStatHtml("playerTwo", "losses");
+  updateGameTiesHtml();
 }
 
 function resetGameChoices(){
-  firebase.database().ref("playersChoices/playerOneChoice").set("TBD");
-  firebase.database().ref("playersChoices/playerTwoChoice").set("TBD");
+  firebase.database().ref("gameStats/playerOne/choice").set("TBD");
+  firebase.database().ref("gameStats/playerTwo/choice").set("TBD");
 }
 
 function disableChoiceButtons(){
@@ -358,9 +275,9 @@ function checkIfBothPlayersHaveChosen(){
   var playerOneChoice;
   var playerTwoChoice;
 
-  firebase.database().ref("playersChoices").on("value", function(snapshot){
-    var playerOneChoice = snapshot.val().playerOneChoice != "TBD"
-    var playerTwoChoice = snapshot.val().playerTwoChoice != "TBD"
+  firebase.database().ref("gameStats").on("value", function(snapshot){
+    var playerOneChoice = snapshot.val().playerOne.choice != "TBD"
+    var playerTwoChoice = snapshot.val().playerTwo.choice != "TBD"
     if(playerOneChoice && playerTwoChoice){
       enableChoiceButtons();
       resetGameChoices();
