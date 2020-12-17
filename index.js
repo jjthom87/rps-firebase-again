@@ -33,13 +33,7 @@ function bothPlayersJoined(){
     if(playerOneJoined && playerTwoJoined){
       updateHtmlWhenBothPlayersHaveJoined();
     } else if (!playerOneJoined && !playerTwoJoined){
-      // defaultDisabledButton("#player-two-join-game-button")
-
-      var playerOneButtonHtml = "<div id='player-one-join-game-button-div'><button class='join-game-buttons' id='player-one-join-game-button' data-firebase-ref='playerOne' data-player='player-one'>Player One Join</button></div><div class='choices' id='player-one-choices'></div>";
-      $(".player-one-game-div").html(playerOneButtonHtml)
-      var playerTwoButtonHtml = "<button class='join-game-buttons' id='player-two-join-game-button' data-firebase-ref='playerTwo' data-player='player-two' disabled='disabled' style='cursor: default; box-shadow: none;'>Player Two Join</button><div class='choices' id='player-two-choices'></div>";
-      $(".player-two-game-div").html(playerTwoButtonHtml)
-      $(".game-stats").empty();
+      gameReset();
     } else if (playerOneJoined && !playerTwoJoined){
       enableJoinButton("#player-two-join-game-button")
     }
@@ -55,6 +49,14 @@ function updateHtmlOnPlayersJoining(){
     var playerTwoJoined = snapshot.val().playerTwo.joined;
     updateHtmlOnPlayerJoined("player-two", playerTwoJoined)
   });
+}
+
+function gameReset(){
+  var playerOneButtonHtml = "<div id='player-one-join-game-button-div'><button class='join-game-buttons' id='player-one-join-game-button' data-firebase-ref='playerOne' data-player='player-one'>Player One Join</button></div><div class='choices' id='player-one-choices'></div>";
+  $(".player-one-game-div").html(playerOneButtonHtml)
+  var playerTwoButtonHtml = "<button class='join-game-buttons' id='player-two-join-game-button' data-firebase-ref='playerTwo' data-player='player-two' disabled='disabled' style='cursor: default; box-shadow: none;'>Player Two Join</button><div class='choices' id='player-two-choices'></div>";
+  $(".player-two-game-div").html(playerTwoButtonHtml)
+  $(".game-stats").empty();
 }
 
 function updateHtmlWhenBothPlayersHaveJoined(){
@@ -154,7 +156,6 @@ function enableJoinButton(playerButton){
   $(playerButton).attr("disabled", false)
   $(playerButton).css("box-shadow", "2px 2px 5px rgba(1, 1, 0, .7)")
   $(playerButton).css("cursor", "pointer");
-  // $(playerButton).addClass("join-game-buttons");
 }
 
 function playerClickedTheirChoice(){
