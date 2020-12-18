@@ -1,14 +1,3 @@
-// https://stackoverflow.com/questions/20853142/trying-to-detect-browser-close-event
-// $(document).ready(function(){
-//   $(window).bind("beforeunload", function() {
-//       return "Do you really want to close?";
-//   });
-// })
-//
-// $(document).hover(function(e){
-//   console.log(e)
-// })
-
 var firebaseConfig = {
   apiKey: "AIzaSyAFkXUIBpvMXL8OWWbrlYgHwvsql-UG_4o",
   authDomain: "rps-firebase-c3762.firebaseapp.com",
@@ -57,11 +46,11 @@ $(document).on("click", ".choice-buttons", function(){
 })
 
 $(document).on("mouseover", ".join-game-buttons", function(){
-  boxShadowButtonOnHover(this);
+  giveButtonBoxShadow(this);
 });
 
 $(document).on("mouseleave", ".join-game-buttons", function(){
-  noBoxShadowButtonOnMouseLeave(this);
+  removeBoxShadowFromButton(this);
 });
 
 function setGameData(){
@@ -165,14 +154,14 @@ function enableJoinButton(playerButton){
   $(playerButton).addClass("join-game-buttons");
 }
 
-function boxShadowButtonOnHover(element){
+function giveButtonBoxShadow(element){
   if($(element).attr("disabled") != "disabled"){
     $(element).css("box-shadow", "2px 2px 5px rgba(1, 1, 0, .7)")
     $(element).css("cursor", "pointer");
   }
 }
 
-function noBoxShadowButtonOnMouseLeave(element){
+function removeBoxShadowFromButton(element){
   if($(element).attr("disabled") != "disabled"){
     $(element).css("box-shadow", "none")
   }

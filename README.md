@@ -9,3 +9,6 @@
 * Move you firebase files into the <strong>public</strong> folder that is created for you.
 * ```firebase deploy```
 * <strong>Hosting URL</strong> will be your application url
+
+## Thoughts
+* Attempting to perform functionality when someone closes browser: // https://stackoverflow.com/questions/20853142/trying-to-detect-browser-close-event
