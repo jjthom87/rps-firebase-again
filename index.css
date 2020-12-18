@@ -2,7 +2,7 @@
   text-align: center;
 }
 
-.firebase-content {
+.player-divs {
   display: flex;
   justify-content: center;
 }
@@ -16,7 +16,7 @@
   font-size: 24px;
 }
 
-.player-divs {
+.player-div {
   text-align: center;
 }
 
