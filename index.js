@@ -9,7 +9,6 @@
 //   console.log(e)
 // })
 
-
 var firebaseConfig = {
   apiKey: "AIzaSyAFkXUIBpvMXL8OWWbrlYgHwvsql-UG_4o",
   authDomain: "rps-firebase-c3762.firebaseapp.com",
@@ -22,6 +21,48 @@ var firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 
 firebaseUpdatesForGame();
+
+$(document).on('click', '.join-game-buttons', function(){
+  var firebaseRef = $(this).data("firebase-ref")
+  var player = $(this).data("player")
+
+  setPlayerJoinedInFirebase(firebaseRef)
+  populateChoicesForPlayer("#"+player+"-choices", player, firebaseRef);
+  bothPlayersJoined();
+  appendStatsOnPlayersJoining(player)
+
+  if(player == "player-one"){
+    appendWaitingForPlayerTwoContent();
+    setPlayerOneJoinedButton();
+  }
+});
+
+$(document).on("click", ".choice-buttons", function(){
+  var firebaseRef = $(this).data("player");
+  var playerChoice = $(this).data("choice");
+
+  setChoiceForPlayer(firebaseRef, playerChoice);
+
+  setStatsAfterBothPlayersChoose();
+  setChoiceButtonsBasedOnWhoHasChosen();
+
+  var player = firebaseRef == "playerOne" ? "player-one" : "player-two";
+  populateChoicesForPlayer("#"+player+"-choices", player, firebaseRef);
+
+  if(player == "player-one"){
+    $("#player-one-chosen-text").empty();
+  } else {
+    $("#player-two-chosen-text").empty();
+  }
+})
+
+$(document).on("mouseover", ".join-game-buttons", function(){
+  boxShadowButtonOnHover(this);
+});
+
+$(document).on("mouseleave", ".join-game-buttons", function(){
+  noBoxShadowButtonOnMouseLeave(this);
+});
 
 function setGameData(){
   firebase.database().ref("gameStats").set({ties: 0, playerOne: {wins: 0, losses: 0, choice: "TBD", joined: false}, playerTwo: {wins: 0, losses: 0, choice: "TBD", joined: false}})
@@ -62,16 +103,16 @@ function updateHtmlOnPlayersJoining(){
 }
 
 function gameReset(){
-  var playerOneButtonHtml = "<div id='player-one-join-game-button-div'><button class='join-game-buttons' id='player-one-join-game-button' data-firebase-ref='playerOne' data-player='player-one'>Player One Join</button></div><div class='choices' id='player-one-choices'></div>";
+  var playerOneButtonHtml = "<div id='player-one-join-game-button-div'><button class='join-game-buttons' id='player-one-join-game-button' data-firebase-ref='playerOne' data-player='player-one'>Player One Join</button></div><div class='choices' id='player-one-choices'></div><div class='player-chosen-text' id='player-one-chosen-text' style='margin-top: 150px;'></div>";
   $(".player-one-game-div").html(playerOneButtonHtml)
-  var playerTwoButtonHtml = "<button class='join-game-buttons' id='player-two-join-game-button' data-firebase-ref='playerTwo' data-player='player-two' disabled='disabled' style='cursor: default; box-shadow: none;'>Player Two Join</button><div class='choices' id='player-two-choices'></div>";
+  var playerTwoButtonHtml = "<div id='player-two-join-game-button-div'><button class='join-game-buttons' id='player-two-join-game-button' data-firebase-ref='playerTwo' data-player='player-two' disabled='disabled' style='cursor: default; box-shadow: none;'>Player Two Join</button></div><div class='choices' id='player-two-choices'></div><div class='player-chosen-text' id='player-two-chosen-text' style='margin-top: 150px;'></div>";
   $(".player-two-game-div").html(playerTwoButtonHtml)
   $(".game-stats").empty();
 }
 
 function updateHtmlWhenBothPlayersHaveJoined(){
   $(".choices > button").attr("disabled", false);
-  $(".player-two-game-div > p").text("Player Two Has Joined");
+  $("#player-two-join-game-button-div > p").text("Player Two Has Joined");
 }
 
 function firebaseUpdatesForGame(){
@@ -80,29 +121,16 @@ function firebaseUpdatesForGame(){
   updateHtmlForBothPlayersStats();
   updateHtmlOnPlayersJoining();
   bothPlayersJoined();
+
+  setHtmlOfOtherPlayerWhenOnePlayerChooses()
 }
-
-$(document).on('click', '.join-game-buttons', function(){
-  var firebaseRef = $(this).data("firebase-ref")
-  var player = $(this).data("player")
-
-  setPlayerJoinedInFirebase(firebaseRef)
-  populateChoicesForPlayer("#"+player+"-choices", player, firebaseRef);
-  bothPlayersJoined();
-  appendStatsOnPlayersJoining(player)
-
-  if(player == "player-one"){
-    appendWaitingForPlayerTwoContent();
-    setPlayerOneJoinedButton();
-  }
-});
 
 var appendWaitingForPlayerTwoContent = () => {
   var p = $("<p>");
   p.text("Waiting on Player Two")
   p.css("margin-top", "100px")
-  $(".player-two-game-div").empty()
-  $(".player-two-game-div").append(p)
+  $("#player-two-join-game-button-div").empty()
+  $("#player-two-join-game-button-div").append(p)
 }
 
 function setPlayerOneJoinedButton(){
@@ -126,17 +154,33 @@ function setPlayerOneHtmlForPlayerTwoScreen(){
   })
 }
 
-$(document).on("click", ".choice-buttons", function(){
-  var player = $(this).data("player");
-  var playerChoice = $(this).data("choice");
+function defaultDisabledButton(playerButton){
+  $(playerButton).attr("disabled", true);
+  $(playerButton).css("cursor", "default");
+  $(playerButton).css("box-shadow", "none");
+}
 
-  setChoiceForPlayer(player, playerChoice);
+function enableJoinButton(playerButton){
+  $(playerButton).attr("disabled", false);
+  $(playerButton).addClass("join-game-buttons");
+}
 
-  playerClickedTheirChoice();
-  checkIfBothPlayersHaveChosen();
-})
+function boxShadowButtonOnHover(element){
+  if($(element).attr("disabled") != "disabled"){
+    $(element).css("box-shadow", "2px 2px 5px rgba(1, 1, 0, .7)")
+    $(element).css("cursor", "pointer");
+  }
+}
 
-var populateChoicesForPlayer = (choicesDiv, player, firebaseRef) => {
+function noBoxShadowButtonOnMouseLeave(element){
+  if($(element).attr("disabled") != "disabled"){
+    $(element).css("box-shadow", "none")
+  }
+}
+
+function populateChoicesForPlayer(choicesDiv, player, firebaseRef){
+  $(choicesDiv).empty();
+
   var choices = ['rock', 'paper', 'scissor'];
 
   for(var i = 0; i < choices.length; i++){
@@ -152,43 +196,38 @@ var populateChoicesForPlayer = (choicesDiv, player, firebaseRef) => {
   }
 }
 
+function setHtmlOfOtherPlayerWhenOnePlayerChooses(){
+  firebase.database().ref("gameStats").on("value", function(snapshot){
+    var didPlayerOneChoose = snapshot.val().playerOne.choice != "TBD"
+    var didPlayerTwoChoose = snapshot.val().playerTwo.choice != "TBD"
+    var playerOneJoined = snapshot.val().playerOne.joined;
+    var playerTwoJoined = snapshot.val().playerTwo.joined;
+    var ties = snapshot.val().ties;
+
+    if (didPlayerOneChoose && !didPlayerTwoChoose){
+      appendPlayerChosenText("player-one", "Player One")
+    } else if (!didPlayerOneChoose && didPlayerTwoChoose){
+      appendPlayerChosenText("player-two", "Player Two")
+    } else if (didPlayerOneChoose && didPlayerTwoChoose){
+      $(".player-chosen-text").empty();
+    } else {
+      $(".player-chosen-text").empty();
+    }
+  });
+}
+
+function appendPlayerChosenText(player, playerText){
+  $("#"+player+"-chosen-text").empty();
+  var div = $("<div>");
+  div.text(playerText + " Has Chosen");
+  $("#"+player+"-chosen-text").append(div);
+}
+
 function setChoiceForPlayer(player, choice){
   firebase.database().ref("gameStats/"+player+"/choice").set(choice)
 }
 
-function defaultDisabledButton(playerButton){
-  $(playerButton).attr("disabled", true);
-  $(playerButton).css("cursor", "default");
-  $(playerButton).css("box-shadow", "none");
-}
-
-function enableJoinButton(playerButton){
-  $(playerButton).attr("disabled", false);
-  $(playerButton).addClass("join-game-buttons");
-}
-
-$(document).on("mouseover", ".join-game-buttons", function(){
-  boxShadowButtonOnHover(this);
-});
-
-$(document).on("mouseleave", ".join-game-buttons", function(){
-  noBoxShadowButtonOnMouseLeave(this);
-});
-
-function boxShadowButtonOnHover(element){
-  if($(element).attr("disabled") != "disabled"){
-    $(element).css("box-shadow", "2px 2px 5px rgba(1, 1, 0, .7)")
-    $(element).css("cursor", "pointer");
-  }
-}
-
-function noBoxShadowButtonOnMouseLeave(element){
-  if($(element).attr("disabled") != "disabled"){
-    $(element).css("box-shadow", "none")
-  }
-}
-
-function playerClickedTheirChoice(){
+function setStatsAfterBothPlayersChoose(){
   var playerOneChoice = null;
   var playerTwoChoice = null;
 
@@ -200,10 +239,6 @@ function playerClickedTheirChoice(){
 
     if(didPlayerOneChoose && didPlayerTwoChoose){
       gameLogic(playerOneChoice, playerTwoChoice)
-    } else if (didPlayerOneChoose && !didPlayerTwoChoose){
-
-    } else if (!didPlayerOneChoose && !didPlayerTwoChoose){
-
     }
   });
 }
@@ -297,25 +332,7 @@ function updateHtmlForBothPlayersStats(){
   updateGameTiesHtml();
 }
 
-function resetGameChoices(){
-  firebase.database().ref("gameStats/playerOne/choice").set("TBD");
-  firebase.database().ref("gameStats/playerTwo/choice").set("TBD");
-}
-
-function disableChoiceButtons(){
-  $(".player-one-choice-buttons").attr("disabled", true)
-  $(".player-two-choice-buttons").attr("disabled", true)
-}
-
-function enableChoiceButtons(){
-  $(".player-one-choice-buttons").attr("disabled", false)
-  $(".player-two-choice-buttons").attr("disabled", false)
-}
-
-function checkIfBothPlayersHaveChosen(){
-  var playerOneChoice;
-  var playerTwoChoice;
-
+function setChoiceButtonsBasedOnWhoHasChosen(){
   firebase.database().ref("gameStats").on("value", function(snapshot){
     var playerOneChoice = snapshot.val().playerOne.choice != "TBD"
     var playerTwoChoice = snapshot.val().playerTwo.choice != "TBD"
@@ -331,4 +348,14 @@ function checkIfBothPlayersHaveChosen(){
       enableChoiceButtons();
     }
   });
+}
+
+function resetGameChoices(){
+  firebase.database().ref("gameStats/playerOne/choice").set("TBD");
+  firebase.database().ref("gameStats/playerTwo/choice").set("TBD");
+}
+
+function enableChoiceButtons(){
+  $(".player-one-choice-buttons").attr("disabled", false)
+  $(".player-two-choice-buttons").attr("disabled", false)
 }
