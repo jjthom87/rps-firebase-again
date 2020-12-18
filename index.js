@@ -1,4 +1,14 @@
 // https://stackoverflow.com/questions/20853142/trying-to-detect-browser-close-event
+// $(document).ready(function(){
+//   $(window).bind("beforeunload", function() {
+//       return "Do you really want to close?";
+//   });
+// })
+//
+// $(document).hover(function(e){
+//   console.log(e)
+// })
+
 
 var firebaseConfig = {
   apiKey: "AIzaSyAFkXUIBpvMXL8OWWbrlYgHwvsql-UG_4o",
@@ -153,9 +163,29 @@ function defaultDisabledButton(playerButton){
 }
 
 function enableJoinButton(playerButton){
-  $(playerButton).attr("disabled", false)
-  $(playerButton).css("box-shadow", "2px 2px 5px rgba(1, 1, 0, .7)")
-  $(playerButton).css("cursor", "pointer");
+  $(playerButton).attr("disabled", false);
+  $(playerButton).addClass("join-game-buttons");
+}
+
+$(document).on("mouseover", ".join-game-buttons", function(){
+  boxShadowButtonOnHover(this);
+});
+
+$(document).on("mouseleave", ".join-game-buttons", function(){
+  noBoxShadowButtonOnMouseLeave(this);
+});
+
+function boxShadowButtonOnHover(element){
+  if($(element).attr("disabled") != "disabled"){
+    $(element).css("box-shadow", "2px 2px 5px rgba(1, 1, 0, .7)")
+    $(element).css("cursor", "pointer");
+  }
+}
+
+function noBoxShadowButtonOnMouseLeave(element){
+  if($(element).attr("disabled") != "disabled"){
+    $(element).css("box-shadow", "none")
+  }
 }
 
 function playerClickedTheirChoice(){
@@ -170,6 +200,10 @@ function playerClickedTheirChoice(){
 
     if(didPlayerOneChoose && didPlayerTwoChoose){
       gameLogic(playerOneChoice, playerTwoChoice)
+    } else if (didPlayerOneChoose && !didPlayerTwoChoose){
+
+    } else if (!didPlayerOneChoose && !didPlayerTwoChoose){
+
     }
   });
 }

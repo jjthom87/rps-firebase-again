@@ -16,11 +16,6 @@
   font-size: 24px;
 }
 
-.join-game-buttons:hover {
-  cursor: pointer;
-  box-shadow: 2px 2px 5px rgba(1, 1, 0, .7);
-}
-
 .player-divs {
   text-align: center;
 }
