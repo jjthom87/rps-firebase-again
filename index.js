@@ -1,12 +1,3 @@
-var firebaseConfig = {
-  apiKey: "AIzaSyAFkXUIBpvMXL8OWWbrlYgHwvsql-UG_4o",
-  authDomain: "rps-firebase-c3762.firebaseapp.com",
-  databaseURL: "https://rps-firebase-c3762-default-rtdb.firebaseio.com",
-  projectId: "rps-firebase-c3762",
-  storageBucket: "rps-firebase-c3762.appspot.com",
-  messagingSenderId: "66561934367",
-  appId: "1:66561934367:web:4581319ce288780ac7812a"
-};
 firebase.initializeApp(firebaseConfig);
 
 firebaseUpdatesForGame();
